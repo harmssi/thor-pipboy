@@ -226,7 +226,6 @@ void WsServer::Accept()
 		auto c = std::make_unique<Client>();
 		c->id = _nextId++;
 		c->sock = s;
-		Log("Client " + std::to_string(c->id) + " verbunden (TCP)");
 		_clients[c->id] = std::move(c);
 	}
 }
@@ -298,6 +297,7 @@ void WsServer::ProcessHandshake(Client& c)
 	         Base64(digest.data(), digest.size()) + "\r\n\r\n";
 	c.upgraded = true;
 	const int id = c.id;
+	Log("Client " + std::to_string(id) + " verbunden");
 	Flush(c);
 	if (_clients.count(id) && onConnect)
 		onConnect(id, true);
@@ -456,7 +456,9 @@ void WsServer::Drop(int a_id)
 	const bool wasWs = it->second->upgraded;
 	closesocket(it->second->sock);
 	_clients.erase(it);
-	Log("Client " + std::to_string(a_id) + " getrennt");
-	if (wasWs && onConnect)
-		onConnect(a_id, false);
+	if (wasWs) {
+		Log("Client " + std::to_string(a_id) + " getrennt");  // reine TCP-Proben (Wächter) nicht protokollieren
+		if (onConnect)
+			onConnect(a_id, false);
+	}
 }
