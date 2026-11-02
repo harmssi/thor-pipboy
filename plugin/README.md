@@ -65,3 +65,14 @@ Alle Daten werden auf dem Spielthread (F4SE-Task-Queue) gesammelt; Befehle ebens
 | `toggle` | `id`, `stack` | ausrüsten/ablegen bzw. Hilfsmittel benutzen |
 | `equip` / `unequip` / `use` | `id`, `stack` | explizit |
 | `radio` | `enable` (optional, sonst umschalten) | Pip-Boy-Radio an/aus |
+
+## Thor/DroiDeck (getestet 02.11.2026)
+
+- F4SE 0.7.9 + Address Library (All in One, `version-1-11-240-0.bin`) + Plugin per
+  `tools/install_thor.sh <F4SE-Ordner> <bin>`; vorher `tools/check_addrlib.py <bin>` (alle 26 genutzten IDs vorhanden).
+- Steam-Startoption (Eigenschaften → Allgemein → Startoptionen; vorher leer):
+  `bash -c 'a=("${@/Fallout4Launcher.exe/f4se_loader.exe}"); exec "${a[@]/Fallout4.exe/f4se_loader.exe}"' -- %command%`
+- Ergebnis: Plugin lädt (F4SE 0.7.9, Spiel 1.11.240), Server aus Android auf 127.0.0.1:8767 erreichbar,
+  Werte, Inventar, Quests, Karte (Welt + lokal) und Radio live; Ausrüsten, Benutzen und Radio an/aus funktionieren im Spiel.
+- Log: `Data/F4SE/Plugins/ThorPipBoy.log` (Uhrzeit im Proton-Prefix = UTC).
+- Bekannt: `EquipObject` meldet bei Verbrauchsgütern `false`, obwohl benutzt wird → wird als Erfolg gemeldet.
