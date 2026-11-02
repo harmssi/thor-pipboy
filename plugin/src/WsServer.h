@@ -28,6 +28,7 @@ public:
 	LogFn     onLog;
 	MessageFn onMessage;
 	ConnectFn onConnect;
+	std::function<std::string()> statusJson;  // Antwort auf einfache HTTP-Anfragen (Wächter der App)
 
 private:
 	struct Client;

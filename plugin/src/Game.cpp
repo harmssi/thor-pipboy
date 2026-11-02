@@ -13,7 +13,12 @@ namespace Game
 {
 	namespace
 	{
-		std::atomic_bool g_ready{ false };
+		std::atomic_bool      g_ready{ false };
+		std::atomic<long long> g_readySince{ 0 };
+		long long NowMs()
+		{
+			return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+		}
 
 		std::string Hex(std::uint32_t a_v)
 		{
@@ -446,7 +451,12 @@ namespace Game
 		}
 	}
 
-	void SetReady(bool a_ready) { g_ready = a_ready; }
+	void SetReady(bool a_ready)
+	{
+		g_readySince = a_ready ? NowMs() : 0;
+		g_ready = a_ready;
+	}
+	long long ReadyForMs() { return g_ready ? NowMs() - g_readySince.load() : 0; }
 	bool IsReady() { return g_ready; }
 
 	bool RunOnGameThread(std::function<void()> a_fn, int a_timeoutMs)

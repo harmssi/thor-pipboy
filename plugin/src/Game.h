@@ -11,6 +11,8 @@ namespace Game
 {
 	void SetReady(bool a_ready);
 	bool IsReady();
+	// Millisekunden seit das Spiel (Spielstand geladen) bereit ist, sonst 0
+	long long ReadyForMs();
 
 	// Führt a_fn über die F4SE-Task-Queue auf dem Spielthread aus und wartet.
 	// false = Timeout (Ladebildschirm, Spiel hängt, ...). a_fn läuft dann ggf. später noch.

@@ -285,7 +285,7 @@ void WsServer::ProcessHandshake(Client& c)
 	}
 	if (key.empty()) {
 		// kein WebSocket: einfache Statusseite für curl/Browser
-		std::string body = "{\"server\":\"ThorPipBoy\",\"websocket\":true}\n";
+		std::string body = (statusJson ? statusJson() : std::string("{\"server\":\"ThorPipBoy\"}")) + "\n";
 		c.out += "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: " +
 		         std::to_string(body.size()) + "\r\n\r\n" + body;
 		c.closing = true;

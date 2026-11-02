@@ -243,6 +243,12 @@ namespace Protocol
 				}
 			};
 			server.onMessage = [](int c, const std::string& t) { HandleMessage(c, t); };
+			server.statusJson = []() {
+				json::Writer w;
+				w.BeginObject().KV("server", "ThorPipBoy").KB("websocket", true);
+				w.KB("ready", Game::IsReady()).KI("readyForMs", Game::ReadyForMs()).EndObject();
+				return w.take();
+			};
 
 			int tries = 0;
 			while (!g_stop && !server.Start(g_cfg.address, g_cfg.port)) {
