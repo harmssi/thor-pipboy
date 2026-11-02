@@ -20,14 +20,18 @@ import java.net.Socket;
  * Pip-Boy-Wächter ohne eigenen Dauerprozess (spart RAM – Fallout 4 braucht auf dem Thor fast alles).
  * Solange der Pip-Boy läuft, schiebt er alle paar Sekunden einen Alarm DEADLINE_MS in die Zukunft.
  * Beendet Android die App (Low-Memory-Killer beim Laden eines Spielstands), läuft der Alarm ab:
- * dieser Receiver startet kurz, prüft, ob das Plugin (Port 8767) noch lauscht und die Pip-Boy-Task fehlt,
- * und öffnet den Pip-Boy unten neu. Hat der Nutzer ihn selbst geschlossen, passiert nichts.
+ * dieser Receiver startet kurz, fragt den Plugin-Status ab (HTTP auf Port 8767) und öffnet den Pip-Boy
+ * unten neu, sobald das Spiel wieder STABIL läuft (Spielstand seit >= 20 s geladen).
+ * Wichtig (am Gerät gemessen): Holt sich der Pip-Boy den Vordergrund, fällt DroiDeck von oom_adj 0 auf 50;
+ * während eines Lade-Peaks beendet der Low-Memory-Killer dann DroiDeck – und damit das Spiel.
+ * Deshalb nie während des Ladens neu öffnen. Hat der Nutzer den Pip-Boy selbst geschlossen, passiert nichts.
  * Rechte (einmalig per adb): appops set de.harmssi.thorpipboy SYSTEM_ALERT_WINDOW allow
  *                            appops set de.harmssi.thorpipboy SCHEDULE_EXACT_ALARM allow
  */
 public class Guard extends BroadcastReceiver {
     private static final String TAG = "ThorPipBoyGuard";
     static final long DEADLINE_MS = 6000;
+    private static final long STABLE_MS = 20000;   // so lange muss der Spielstand geladen sein
     private static final int BOTTOM_DISPLAY = 4;
 
     static File userClosedFlag(Context ctx) { return new File(ctx.getFilesDir(), "user_closed"); }
@@ -61,8 +65,14 @@ public class Guard extends BroadcastReceiver {
             try {
                 if (userClosedFlag(ctx).exists()) return;
                 if (pipBoyTaskAlive(ctx)) { arm(ctx, DEADLINE_MS); return; }  // läuft noch (z. B. pausiert)
-                if (!gameListening()) return;                                 // Spiel weg: Kette endet
-                Log.i(TAG, "Pip-Boy fehlt bei laufendem Spiel – öffne neu");
+                long readyFor = gameReadyForMs();
+                if (readyFor < 0) return;                                     // Spiel weg: Kette endet
+                if (readyFor < STABLE_MS) {                                   // lädt noch: später erneut prüfen
+                    Log.i(TAG, "Pip-Boy fehlt, Spiel noch nicht stabil (" + readyFor + " ms) – warte");
+                    arm(ctx, 5000);
+                    return;
+                }
+                Log.i(TAG, "Pip-Boy fehlt bei stabil laufendem Spiel – öffne neu");
                 relaunch(ctx);
                 arm(ctx, DEADLINE_MS * 3);                                    // falls auch das scheitert
             } finally {
@@ -81,12 +91,21 @@ public class Guard extends BroadcastReceiver {
         return false;
     }
 
-    private static boolean gameListening() {
+    /** Plugin-Status per HTTP: -1 = Spiel/Plugin nicht erreichbar, sonst ms seit geladenem Spielstand (0 = lädt). */
+    private static long gameReadyForMs() {
         try (Socket s = new Socket()) {
             s.connect(new InetSocketAddress(PipBoyActivity.HOST, PipBoyActivity.PORT), 500);
-            return true;
+            s.setSoTimeout(1000);
+            s.getOutputStream().write("GET /status HTTP/1.1\r\nHost: x\r\n\r\n".getBytes());
+            java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[1024];
+            int n;
+            while ((n = s.getInputStream().read(buf)) > 0) b.write(buf, 0, n);
+            String r = b.toString("UTF-8");
+            org.json.JSONObject j = new org.json.JSONObject(r.substring(r.indexOf('{')));
+            return j.optBoolean("ready") ? j.optLong("readyForMs", 0) : 0;
         } catch (Exception e) {
-            return false;
+            return -1;
         }
     }
 
