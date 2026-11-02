@@ -18,13 +18,21 @@ public class PipBoyActivity extends Activity implements WsClient.Listener {
 
     private PipBoyView view;
     private WsClient client;
+    private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+    /** Wächter-Alarm laufend nach vorn schieben (auch im Hintergrund, solange der Prozess lebt). */
+    private final Runnable rearm = new Runnable() {
+        @Override public void run() {
+            Guard.arm(PipBoyActivity.this, Guard.DEADLINE_MS);
+            handler.postDelayed(this, Guard.DEADLINE_MS / 3);
+        }
+    };
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        GuardService.userClosedFlag(this).delete();
-        GuardService.start(this);
+        Guard.userClosedFlag(this).delete();
+        handler.post(rearm);
         client = new WsClient(HOST, PORT, this);
         view = new PipBoyView(this, client);
         setContentView(view);
@@ -48,7 +56,9 @@ public class PipBoyActivity extends Activity implements WsClient.Listener {
     @Override protected void onDestroy() {
         // bewusst geschlossen (nicht von Android beendet): Wächter soll ihn nicht wieder öffnen
         if (isFinishing() && !isChangingConfigurations()) {
-            try { GuardService.userClosedFlag(this).createNewFile(); } catch (Exception ignored) { }
+            try { Guard.userClosedFlag(this).createNewFile();
+            Guard.disarm(this);
+            handler.removeCallbacks(rearm); } catch (Exception ignored) { }
         }
         super.onDestroy();
     }

@@ -1,9 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Nur für 127.0.0.1 (ThorPipBoy-F4SE-Plugin im Spiel); keine Verbindungen nach außen. -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Wächter: Foreground-Service, der den Pip-Boy nach einem Low-Memory-Kill unten neu öffnet -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Wächter (Alarm-Kette, Guard.java): öffnet den Pip-Boy nach einem Low-Memory-Kill unten neu -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <queries>
         <package android:name="com.droiddeck.launcher" />
     </queries>
@@ -22,6 +22,6 @@
             android:label="@string/pipboy_name" android:launchMode="singleTask"
             android:resizeableActivity="true" android:screenOrientation="unspecified"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|density|uiMode" />
-        <service android:name=".GuardService" android:process=":guard" android:exported="false" />
+        <receiver android:name=".Guard" android:exported="false" />
     </application>
 </manifest>
