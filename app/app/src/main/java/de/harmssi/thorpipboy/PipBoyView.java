@@ -50,7 +50,7 @@ public class PipBoyView extends View {
     private boolean connected;
     private boolean ready;
     private JSONObject game, stats, limbs, location, time, radio, map;
-    private JSONArray special, inventory, quests;
+    private JSONArray special, inventory, quests, pipQuests;
     private final Map<String, String> pending = new HashMap<>();   // cmdId -> Name
     private String toast;
     private long toastUntil;
@@ -116,6 +116,7 @@ public class PipBoyView extends View {
                 if (d.has("player.quests")) quests = d.optJSONArray("player.quests");
                 if (d.has("radio")) radio = d.optJSONObject("radio");
                 if (d.has("pipboy.Map")) map = d.optJSONObject("pipboy.Map");
+                if (d.has("pipboy.Quests")) pipQuests = d.optJSONArray("pipboy.Quests");
                 break;
             }
             case "commandResult": {
@@ -241,7 +242,11 @@ public class PipBoyView extends View {
         String head = getContext().getString(connected ? R.string.loading : R.string.waiting);
         boolean blink = (t / 600) % 2 == 0;
         glowText(c, head + (blink ? "_" : " "), cx, cy + u * 3.5f, u * 1.5f, Paint.Align.CENTER, G);
-        txt(c, getContext().getString(R.string.waiting_hint), cx, cy + u * 5.6f, u * 0.8f, Paint.Align.CENTER, G_DIM);
+        String hint = getContext().getString(R.string.waiting_hint);
+        float hs = u * 0.8f;
+        text.setTextSize(hs);
+        while (hs > u * 0.4f && text.measureText(hint) > w - u * 2) { hs *= 0.95f; text.setTextSize(hs); }
+        txt(c, hint, cx, cy + u * 5.6f, hs, Paint.Align.CENTER, G_DIM);
         postInvalidateDelayed(60);
     }
 
@@ -287,7 +292,7 @@ public class PipBoyView extends View {
             case 0: return new int[]{R.string.sub_status, R.string.sub_special};
             case 1: return new int[]{R.string.sub_weapons, R.string.sub_apparel, R.string.sub_aid, R.string.sub_misc, R.string.sub_junk, R.string.sub_ammo};
             case 2: return new int[]{R.string.sub_quests, R.string.sub_world};
-            case 3: return new int[]{R.string.sub_worldmap};
+            case 3: return new int[]{location != null && location.optBoolean("interior") ? R.string.sub_localmap : R.string.sub_worldmap};
             default: return new int[]{R.string.sub_stations};
         }
     }
@@ -571,17 +576,53 @@ public class PipBoyView extends View {
     }
 
     // ---------------------------------------------------------------- DATA
-    private void drawData(Canvas c, RectF a) {
-        if (sub[2] == 1) { drawWorld(c, a); return; }
-        // Quests gruppiert
+    /** Quests aus dem internen Pip-Boy-Modell (aktiv zuerst); Fallback: direkte Questziele. */
+    private LinkedHashMap<String, List<JSONObject>> questGroups(List<String> activeOut) {
         LinkedHashMap<String, List<JSONObject>> byQuest = new LinkedHashMap<>();
+        if (pipQuests != null && pipQuests.length() > 0) {
+            List<JSONObject> qs = new ArrayList<>();
+            for (int i = 0; i < pipQuests.length(); i++) { JSONObject q = pipQuests.optJSONObject(i); if (q != null) qs.add(q); }
+            qs.sort((x, y) -> {
+                int e = Boolean.compare(y.optBoolean("active"), x.optBoolean("active"));
+                if (e != 0) return e;
+                return Boolean.compare(y.optBoolean("enabled"), x.optBoolean("enabled"));
+            });
+            for (JSONObject q : qs) {
+                String name = q.optString("text");
+                List<JSONObject> objs = new ArrayList<>();
+                JSONArray arr = q.optJSONArray("objectives");
+                if (arr != null) for (int j = 0; j < arr.length(); j++) {
+                    JSONObject o = arr.optJSONObject(j);
+                    if (o == null || o.optString("text").trim().isEmpty()) continue;
+                    JSONObject n = new JSONObject();
+                    try {
+                        n.put("objective", o.optString("text"));
+                        n.put("state", o.optBoolean("failed") ? "failed" : o.optBoolean("completed") ? "completed" : "active");
+                    } catch (Exception ignored) { }
+                    objs.add(n);
+                }
+                // offene Ziele vor erledigten
+                objs.sort((x, y) -> Boolean.compare(!x.optString("state").equals("active"), !y.optString("state").equals("active")));
+                byQuest.put(name, objs);
+                if (q.optBoolean("active")) activeOut.add(name);
+            }
+            return byQuest;
+        }
         if (quests != null) for (int i = 0; i < quests.length(); i++) {
             JSONObject o = quests.optJSONObject(i);
-            if (o == null) continue;
+            if (o == null || o.optString("objective").trim().isEmpty()) continue;
             String q = o.optString("quest");
             if (!byQuest.containsKey(q)) byQuest.put(q, new ArrayList<>());
             byQuest.get(q).add(o);
+            if (o.optString("state").equals("active") && !activeOut.contains(q)) activeOut.add(q);
         }
+        return byQuest;
+    }
+
+    private void drawData(Canvas c, RectF a) {
+        if (sub[2] == 1) { drawWorld(c, a); return; }
+        List<String> activeQuests = new ArrayList<>();
+        LinkedHashMap<String, List<JSONObject>> byQuest = questGroups(activeQuests);
         if (byQuest.isEmpty()) {
             txt(c, getContext().getString(R.string.no_quests), a.centerX(), a.top + u * 3, u * 1.0f, Paint.Align.CENTER, G_DIM);
             return;
@@ -592,8 +633,7 @@ public class PipBoyView extends View {
         float off = beginScroll("quests", total, a.height());
         float y = a.top - off;
         for (Map.Entry<String, List<JSONObject>> e : byQuest.entrySet()) {
-            boolean anyActive = false;
-            for (JSONObject o : e.getValue()) if (o.optString("state").equals("active")) anyActive = true;
+            boolean anyActive = activeQuests.contains(e.getKey());
             if (anyActive) { fill.setColor(G); c.drawRect(a.left, y + qH * 0.3f, a.left + u * 0.5f, y + qH * 0.7f, fill); }
             glowText(c, fit(e.getKey().isEmpty() ? "?" : e.getKey(), a.width() - u * 2, u * 1.1f), a.left + u * 1.0f, y + qH * 0.68f, u * 1.1f, Paint.Align.LEFT, anyActive ? G : G_DIM);
             y += qH;
@@ -616,8 +656,9 @@ public class PipBoyView extends View {
     private String dateString() {
         if (time == null) return "–";
         int day = (int) time.optDouble("day", 0);
-        int month = (int) time.optDouble("month", 0) + 1;     // Spiel zählt Monate ab 0
+        int month = (int) time.optDouble("month", 0);         // am Gerät geprüft: 1-basiert (23.10. = Spielstart)
         int year = (int) time.optDouble("year", 0);
+        if (year < 1000) year += 2000;                        // Spiel speichert 287 für 2287
         double hr = time.optDouble("hour", 0);
         int hh = (int) Math.floor(hr), mm = (int) Math.floor((hr - hh) * 60);
         return String.format(Locale.ROOT, "%02d.%02d.%d  %02d:%02d", day, month, year, hh, mm);
@@ -662,19 +703,22 @@ public class PipBoyView extends View {
         line.setColor(G_DIM);
         c.drawRect(a, line);
 
-        JSONObject world = map != null ? map.optJSONObject("World") : null;
+        boolean interior = location != null && location.optBoolean("interior");
+        JSONObject world = map != null ? map.optJSONObject(interior ? "Local" : "World") : null;
+        JSONArray questMarks = world != null ? world.optJSONArray("Quests") : null;
+        JSONArray doors = interior && world != null ? world.optJSONArray("Doors") : null;
         JSONArray locs = world != null ? world.optJSONArray("Locations") : null;
         JSONObject player = world != null ? world.optJSONObject("Player") : null;
         double px = num(player, "X", "x"), py = num(player, "Y", "y");
         double rot = num(player, "Rotation", "rotation");
-        if (Double.isNaN(px) && location != null && !location.optBoolean("interior")) {
+        if (Double.isNaN(px) && location != null && !interior) {
             px = location.optDouble("x"); py = location.optDouble("y");
             rot = Math.toDegrees(location.optDouble("heading", 0));
         }
 
         // Ausdehnung: Extents (NW/NE/SW) oder aus den Markern
         double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE, minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
-        JSONObject ext = world != null ? world.optJSONObject("Extents") : null;
+        JSONObject ext = world != null && !interior ? world.optJSONObject("Extents") : null;
         if (ext != null) {
             for (Iterator<String> it = ext.keys(); it.hasNext(); ) {
                 String k = it.next();
@@ -684,18 +728,23 @@ public class PipBoyView extends View {
                 if (k.endsWith("Y")) { minY = Math.min(minY, v); maxY = Math.max(maxY, v); }
             }
         }
-        if (minX == Double.MAX_VALUE && locs != null) {
-            for (int i = 0; i < locs.length(); i++) {
-                JSONObject o = locs.optJSONObject(i);
+        if (minX == Double.MAX_VALUE) {
+            // Innenräume: Ausdehnung aus Türen, Questmarkern und Spieler (+ Rand)
+            List<JSONObject> pts = new ArrayList<>();
+            for (JSONArray arr : new JSONArray[]{locs, doors, questMarks})
+                if (arr != null) for (int i = 0; i < arr.length(); i++) if (arr.optJSONObject(i) != null) pts.add(arr.optJSONObject(i));
+            if (player != null) pts.add(player);
+            for (JSONObject o : pts) {
                 double x = num(o, "X", "x"), y = num(o, "Y", "y");
                 if (Double.isNaN(x) || Double.isNaN(y)) continue;
                 minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
             }
+            if (minX <= maxX) { double m = Math.max(1500, Math.max(maxX - minX, maxY - minY) * 0.15); minX -= m; maxX += m; minY -= m; maxY += m; }
         }
         boolean haveExtent = minX < maxX && minY < maxY;
         if (!haveExtent && !Double.isNaN(px)) { minX = px - 20000; maxX = px + 20000; minY = py - 20000; maxY = py + 20000; haveExtent = true; }
 
-        if (location != null && location.optBoolean("interior")) {
+        if (interior) {
             txt(c, getContext().getString(R.string.map_interior, location.optString("cell")), a.left + u * 0.5f, a.top + u * 1.3f, u * 0.9f, Paint.Align.LEFT, G);
         }
         if (!haveExtent) {
@@ -729,6 +778,29 @@ public class PipBoyView extends View {
                 else { line.setColor(G_DIM); line.setStrokeWidth(u * 0.06f); c.drawPath(d, line); }
                 if (mapZoom && disc) txt(c, o.optString("text", o.optString("Name")), mx + ms * 1.6f, my + ms, u * 0.65f, Paint.Align.LEFT, G_DIM);
             }
+        }
+        // Türen (lokal) als offene Kreise, Questmarker als Quadrate mit Glühen
+        if (doors != null) for (int i = 0; i < doors.length(); i++) {
+            JSONObject o = doors.optJSONObject(i);
+            double x = num(o, "X", "x"), y = num(o, "Y", "y");
+            if (Double.isNaN(x)) continue;
+            float mx = (float) sx.applyAsDouble(x), my = (float) sy.applyAsDouble(y);
+            line.setColor(G); line.setStrokeWidth(u * 0.1f);
+            c.drawCircle(mx, my, u * 0.4f, line);
+            txt(c, o.optString("Name"), mx + u * 0.6f, my + u * 0.3f, u * 0.65f, Paint.Align.LEFT, G_DIM);
+        }
+        if (questMarks != null) for (int i = 0; i < questMarks.length(); i++) {
+            JSONObject o = questMarks.optJSONObject(i);
+            double x = num(o, "X", "x"), y = num(o, "Y", "y");
+            if (Double.isNaN(x)) continue;
+            float mx = (float) sx.applyAsDouble(x), my = (float) sy.applyAsDouble(y);
+            float q = u * 0.45f;
+            glow.setColor(0x991AFF80);
+            c.drawRect(mx - q, my - q, mx + q, my + q, glow);
+            line.setColor(G); line.setStrokeWidth(u * 0.12f);
+            c.drawRect(mx - q, my - q, mx + q, my + q, line);
+            fill.setColor(G);
+            c.drawRect(mx - q * 0.4f, my - q * 0.4f, mx + q * 0.4f, my + q * 0.4f, fill);
         }
         if (!Double.isNaN(px)) {
             float mx = (float) sx.applyAsDouble(px), my = (float) sy.applyAsDouble(py);
@@ -782,7 +854,8 @@ public class PipBoyView extends View {
             float off = beginScroll("radio", stations.size() * rowH, list.height());
             float y = list.top - off;
             for (JSONObject o : stations) {
-                boolean active = o.optBoolean("active");
+                double rf = radio != null ? radio.optDouble("frequency", 0) : 0;
+                boolean active = o.optBoolean("active") || (on && Math.abs(o.optDouble("frequency", -1) - rf) < 0.15);
                 if (active) { fill.setColor(BG_HI); c.drawRect(list.left, y, list.right, y + rowH, fill); fill.setColor(G); c.drawRect(list.left + u * 0.2f, y + rowH * 0.36f, list.left + u * 0.8f, y + rowH * 0.64f, fill); }
                 String name = o.optString("text", o.optString("name", "?"));
                 if (active) glowText(c, fit(name, list.width() - u * 1.6f, u * 0.95f), list.left + u * 1.3f, y + rowH * 0.66f, u * 0.95f, Paint.Align.LEFT, G);

@@ -50,7 +50,7 @@ public class PipBoyActivity extends Activity implements WsClient.Listener {
         client.subscribe("main", 400, "game", "player.stats", "player.special", "player.limbs",
                 "player.location", "world.time");
         client.subscribe("inv", 1000, "player.inventory");
-        client.subscribe("quests", 2000, "player.quests");
+        client.subscribe("quests", 2000, "player.quests", "pipboy.Quests");
         client.subscribe("radio", 1500, "radio");
         client.subscribe("map", 2500, "pipboy.Map");
     }

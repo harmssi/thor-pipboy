@@ -21,6 +21,7 @@
     <string name="sub_quests">QUESTS</string>
     <string name="sub_world">WELT</string>
     <string name="sub_worldmap">WELTKARTE</string>
+    <string name="sub_localmap">LOKALE KARTE</string>
     <string name="sub_stations">SENDER</string>
     <string name="sp_S">Stärke</string>
     <string name="sp_P">Wahrnehmung</string>
