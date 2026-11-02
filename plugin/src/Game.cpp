@@ -548,7 +548,9 @@ namespace Game
                     return true;
                 }
                 action = consumable ? "used" : "equipped";
-                return eq->EquipObject(pc, oi, stack, 1, nullptr, false, false, true, true, false);
+                const bool r = eq->EquipObject(pc, oi, stack, 1, nullptr, false, false, true, true, false);
+                // Verbrauchsgüter: EquipObject liefert false, obwohl der Gegenstand benutzt wurde (am Gerät geprüft)
+                return consumable ? true : r;
             });
 			if (!res) {
 				err = action.empty() ? "item_not_found" : "equip_failed";

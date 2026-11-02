@@ -11,8 +11,8 @@ adb shell "rm -rf $TMP; mkdir -p $TMP"
 
 put() { # lokale Datei -> relativer Zielpfad im Spielordner
   local src=$1 rel=$2 dst="$G/$2"
-  adb push -q "$src" "$TMP/f" >/dev/null
-  adb shell "mkdir -p \"\$(dirname \"$dst\")\"; if [ -e \"$dst\" ]; then mkdir -p \"\$(dirname \"$BK/$rel\")\"; cp \"$dst\" \"$BK/$rel\"; fi; cat $TMP/f > \"$dst\"; chmod 666 \"$dst\" 2>/dev/null; true"
+  adb push -q "$src" "$TMP/f" >/dev/null </dev/null
+  adb shell "mkdir -p \"\$(dirname \"$dst\")\"; if [ -e \"$dst\" ]; then mkdir -p \"\$(dirname \"$BK/$rel\")\"; cp \"$dst\" \"$BK/$rel\"; fi; cat $TMP/f > \"$dst\"; chmod 666 \"$dst\" 2>/dev/null; true" </dev/null
   echo "  $rel"
 }
 
