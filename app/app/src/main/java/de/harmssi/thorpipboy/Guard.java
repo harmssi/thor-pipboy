@@ -66,7 +66,16 @@ public class Guard extends BroadcastReceiver {
                 if (userClosedFlag(ctx).exists()) return;
                 if (pipBoyTaskAlive(ctx)) { arm(ctx, DEADLINE_MS); return; }  // läuft noch (z. B. pausiert)
                 long readyFor = gameReadyForMs();
-                if (readyFor < 0) return;                                     // Spiel weg: Kette endet
+                File gone = new File(ctx.getFilesDir(), "game_gone_since");
+                if (readyFor < 0) {
+                    // Spiel nicht erreichbar (z. B. Neustart nach Absturz): bis 3 min weiter prüfen, dann Kette beenden
+                    long now = System.currentTimeMillis();
+                    if (!gone.exists()) { try { gone.createNewFile(); } catch (Exception ignored) { } }
+                    if (now - gone.lastModified() < 180000) arm(ctx, 10000);
+                    else gone.delete();
+                    return;
+                }
+                gone.delete();
                 if (readyFor < STABLE_MS) {                                   // lädt noch: später erneut prüfen
                     Log.i(TAG, "Pip-Boy fehlt, Spiel noch nicht stabil (" + readyFor + " ms) – warte");
                     arm(ctx, 5000);
