@@ -3,6 +3,7 @@
 #include "RE/Fallout.h"
 
 #include "Game.h"
+#include "Log.h"
 #include "Protocol.h"
 
 #include <filesystem>
@@ -28,7 +29,11 @@ namespace
 	Protocol::Config LoadConfig()
 	{
 		Protocol::Config cfg;
-		std::ifstream    in("Data/F4SE/Plugins/ThorPipBoy.ini");
+		wchar_t          buf[REX::W32::MAX_PATH]{};
+		REX::W32::GetModuleFileNameW(REX::W32::GetCurrentModule(), buf, REX::W32::MAX_PATH);
+		std::filesystem::path ini(buf);
+		ini.replace_extension(L".ini");
+		std::ifstream in(ini);
 		std::string      line;
 		auto             trim = [](std::string s) {
             s.erase(0, s.find_first_not_of(" \t\r"));
@@ -61,18 +66,18 @@ namespace
 	{
 		switch (a_msg->type) {
 		case F4SE::MessagingInterface::kGameDataReady:
-			REX::INFO("Spieldaten bereit");
+			Log::Info("Spieldaten bereit");
 			break;
 		case F4SE::MessagingInterface::kPreLoadGame:
 			Game::SetReady(false);
 			break;
 		case F4SE::MessagingInterface::kPostLoadGame:
 			Game::SetReady(a_msg->data != nullptr);
-			REX::INFO("Spielstand geladen (ok={})", a_msg->data != nullptr);
+			Log::Info("Spielstand geladen (ok={})", a_msg->data != nullptr);
 			break;
 		case F4SE::MessagingInterface::kNewGame:
 			Game::SetReady(true);
-			REX::INFO("Neues Spiel");
+			Log::Info("Neues Spiel");
 			break;
 		default:
 			break;
@@ -83,7 +88,9 @@ namespace
 F4SE_PLUGIN_LOAD(const F4SE::LoadInterface* a_f4se)
 {
 	F4SE::Init(a_f4se, { .logName = "ThorPipBoy" });
-	REX::INFO("ThorPipBoy {}.{}.{} geladen", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH);
+	Log::Init();
+	Log::Info("ThorPipBoy {}.{}.{} geladen (F4SE {}, Spiel {})", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
+		F4SE::GetF4SEVersion().string(), REX::FModule::GetExecutingModule().GetFileVersion().string());
 
 	if (auto* m = F4SE::GetMessagingInterface())
 		m->RegisterListener(OnMessage);

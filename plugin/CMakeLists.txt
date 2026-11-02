@@ -52,6 +52,7 @@ add_library(ThorPipBoy SHARED
     src/Protocol.cpp
     src/WsServer.cpp
     src/Json.cpp
+    src/Log.cpp
     src/version.rc)
 target_link_libraries(ThorPipBoy PRIVATE commonlibf4)
 target_compile_definitions(ThorPipBoy PRIVATE

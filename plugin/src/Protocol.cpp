@@ -3,6 +3,7 @@
 #include "Protocol.h"
 
 #include "Game.h"
+#include "Log.h"
 #include "Json.h"
 #include "WsServer.h"
 
@@ -129,7 +130,7 @@ namespace Protocol
 				}
 				s.due = Clock::now();
 				cs.subs[id] = std::move(s);
-				REX::INFO("Client {}: subscribe '{}' ({} Felder)", c, id, cs.subs[id].fields.size());
+				Log::Info("Client {}: subscribe '{}' ({} Felder)", c, id, cs.subs[id].fields.size());
 			} else if (type == "unsubscribe") {
 				if (id.empty())
 					cs.subs.clear();
@@ -174,7 +175,7 @@ namespace Protocol
 				}
 				w.EndObject();
 				g_server->Send(c, w.str());
-				REX::INFO("Client {}: command '{}' -> {}", c, cmd, ran && std::get<0>(*out));
+				Log::Info("Client {}: command '{}' -> {}", c, cmd, ran && std::get<0>(*out));
 				// Abos sofort aktualisieren, damit die App den neuen Zustand sieht
 				for (auto& [sid, s] : cs.subs)
 					s.due = Clock::now();
@@ -225,7 +226,7 @@ namespace Protocol
 		{
 			WsServer server;
 			g_server = &server;
-			server.onLog = [](const std::string& m) { REX::INFO("[ws] {}", m); };
+			server.onLog = [](const std::string& m) { Log::Info("[ws] {}", m); };
 			server.onConnect = [](int c, bool connected) {
 				if (connected) {
 					g_clients[c] = {};
@@ -246,10 +247,10 @@ namespace Protocol
 			int tries = 0;
 			while (!g_stop && !server.Start(g_cfg.address, g_cfg.port)) {
 				if (++tries % 10 == 1)
-					REX::WARN("WebSocket-Server {}:{} konnte nicht starten, neuer Versuch", g_cfg.address, g_cfg.port);
+					Log::Warn("WebSocket-Server {}:{} konnte nicht starten, neuer Versuch", g_cfg.address, g_cfg.port);
 				std::this_thread::sleep_for(std::chrono::seconds(2));
 			}
-			REX::INFO("WebSocket-Server lauscht auf ws://{}:{}", g_cfg.address, g_cfg.port);
+			Log::Info("WebSocket-Server lauscht auf ws://{}:{}", g_cfg.address, g_cfg.port);
 			while (!g_stop) {
 				server.Poll(25);
 				Tick();

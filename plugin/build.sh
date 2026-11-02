@@ -15,7 +15,7 @@ ssh "$HOST" "docker image inspect fo4-xbuild >/dev/null 2>&1" || {
 }
 rsync -a --delete --exclude .git --exclude build --exclude out ./ "$HOST:$REMOTE/"
 ssh "$HOST" "docker run --rm -v $REMOTE:/src -w /src fo4-xbuild bash -c '
-  cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=$CFG -DCMAKE_TOOLCHAIN_FILE=cmake/clang-cl-xwin.cmake >/dev/null &&
+  rm -f build/ThorPipBoy.dll; cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=$CFG -DCMAKE_TOOLCHAIN_FILE=cmake/clang-cl-xwin.cmake >/dev/null &&
   cmake --build build -j4 2>&1 | grep -v \"^\\[\" | grep -E -B2 -A6 \"error|Error|FAILED\" | head -150;
   test -f build/ThorPipBoy.dll'"
 mkdir -p out
