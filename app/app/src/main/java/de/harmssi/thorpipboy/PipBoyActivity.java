@@ -23,6 +23,8 @@ public class PipBoyActivity extends Activity implements WsClient.Listener {
         super.onCreate(state);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        GuardService.userClosedFlag(this).delete();
+        GuardService.start(this);
         client = new WsClient(HOST, PORT, this);
         view = new PipBoyView(this, client);
         setContentView(view);
@@ -33,8 +35,23 @@ public class PipBoyActivity extends Activity implements WsClient.Listener {
         }
     }
 
+    /** Test-Haken: "am start -n de.harmssi.thorpipboy/.PipBoyActivity --ez debug_kill true" beendet den
+     *  UI-Prozess hart (ohne onDestroy), wie es der Low-Memory-Killer tut – zum Prüfen des Wächters. */
+    @Override protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.getBooleanExtra("debug_kill", false)) android.os.Process.killProcess(android.os.Process.myPid());
+    }
+
     @Override protected void onStart() { super.onStart(); client.start(); }
     @Override protected void onStop() { client.stop(); super.onStop(); }
+
+    @Override protected void onDestroy() {
+        // bewusst geschlossen (nicht von Android beendet): Wächter soll ihn nicht wieder öffnen
+        if (isFinishing() && !isChangingConfigurations()) {
+            try { GuardService.userClosedFlag(this).createNewFile(); } catch (Exception ignored) { }
+        }
+        super.onDestroy();
+    }
 
     @Override public void onConnection(boolean connected) {
         view.setConnected(connected);

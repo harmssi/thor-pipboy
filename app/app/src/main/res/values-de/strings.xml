@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Thor Pip-Boy</string>
     <string name="pipboy_name">Pip-Boy</string>
+    <string name="guard_channel">Pip-Boy-Wächter</string>
+    <string name="guard_title">Pip-Boy-Wächter aktiv</string>
     <string name="droiddeck_missing">DroiDeck nicht gefunden – starte nur den Pip-Boy.</string>
     <string name="waiting">WARTE AUF FALLOUT 4…</string>
     <string name="waiting_hint">Spiel mit F4SE starten. Das ThorPipBoy-Plugin lauscht auf 127.0.0.1:8767.</string>

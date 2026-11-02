@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Thor Pip-Boy</string>
     <string name="pipboy_name">Pip-Boy</string>
+    <string name="guard_channel">Pip-Boy guard</string>
+    <string name="guard_title">Pip-Boy guard active</string>
     <string name="droiddeck_missing">DroiDeck not found – starting Pip-Boy only.</string>
     <string name="waiting">WAITING FOR FALLOUT 4…</string>
     <string name="waiting_hint">Start the game with F4SE. The ThorPipBoy plugin listens on 127.0.0.1:8767.</string>
