@@ -20,6 +20,11 @@ public class StarterActivity extends Activity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
+        // Erst den Pip-Boy unten öffnen, dann DroiDeck oben: beim Kaltstart aus IDLE brach die Session ab,
+        // wenn der Pip-Boy DroiDeck direkt nach dem Start den Fokus nahm (am Gerät beobachtet).
+        Intent pip = new Intent(this, PipBoyActivity.class);
+        pip.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(pip, ActivityOptions.makeBasic().setLaunchDisplayId(bottomDisplay()).toBundle());
         Intent dd = new Intent("com.droiddeck.launcher.LAUNCH_GAME");
         dd.setClassName("com.droiddeck.launcher", "com.droiddeck.launcher.FrontEndActivity");
         dd.putExtra("app_id", STEAM_APP_ID);
@@ -31,9 +36,6 @@ public class StarterActivity extends Activity {
             Log.w("ThorPipBoy", "DroiDeck: " + e);
             Toast.makeText(this, R.string.droiddeck_missing, Toast.LENGTH_LONG).show();
         }
-        Intent pip = new Intent(this, PipBoyActivity.class);
-        pip.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(pip, ActivityOptions.makeBasic().setLaunchDisplayId(bottomDisplay()).toBundle());
         finish();
     }
 

@@ -780,6 +780,7 @@ public class PipBoyView extends View {
             }
         }
         // Türen (lokal) als offene Kreise, Questmarker als Quadrate mit Glühen
+        List<float[]> labels = new ArrayList<>();
         if (doors != null) for (int i = 0; i < doors.length(); i++) {
             JSONObject o = doors.optJSONObject(i);
             double x = num(o, "X", "x"), y = num(o, "Y", "y");
@@ -787,7 +788,9 @@ public class PipBoyView extends View {
             float mx = (float) sx.applyAsDouble(x), my = (float) sy.applyAsDouble(y);
             line.setColor(G); line.setStrokeWidth(u * 0.1f);
             c.drawCircle(mx, my, u * 0.4f, line);
-            txt(c, o.optString("Name"), mx + u * 0.6f, my + u * 0.3f, u * 0.65f, Paint.Align.LEFT, G_DIM);
+            boolean near = false;   // Beschriftung nur einmal, wenn Türen dicht beieinander liegen
+            for (float[] l : labels) if (Math.abs(l[0] - mx) < u * 6 && Math.abs(l[1] - my) < u * 1.2f) near = true;
+            if (!near) { txt(c, o.optString("Name"), mx + u * 0.6f, my + u * 0.3f, u * 0.65f, Paint.Align.LEFT, G_DIM); labels.add(new float[]{mx, my}); }
         }
         if (questMarks != null) for (int i = 0; i < questMarks.length(); i++) {
             JSONObject o = questMarks.optJSONObject(i);
