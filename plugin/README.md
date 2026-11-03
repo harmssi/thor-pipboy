@@ -60,7 +60,7 @@ All data is collected and all commands run on the game thread (F4SE task queue).
 
 ## Tested
 
-AYN Thor, DroiDeck (Steam/Proton/FEX), Fallout 4 1.11.240, F4SE 0.7.9, Address Library (all-in-one):
+AYN Thor, DroidDeck (Steam/Proton/FEX), Fallout 4 1.11.240, F4SE 0.7.9, Address Library (all-in-one):
 live stats, inventory, quests, map, radio; equip, use and radio toggle work in game.
 Known: `EquipObject` returns `false` for consumables although the item is used – reported as success.
 

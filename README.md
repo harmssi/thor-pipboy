@@ -55,7 +55,7 @@ You need: Fallout 4 on Steam (runtime **1.11.240**), running on the AYN Thor thr
    adb shell appops set de.harmssi.thorpipboy SCHEDULE_EXACT_ALARM allow
    ```
 6. **Start “Thor Pip-Boy”** from the launcher: it opens the Pip-Boy on the bottom screen and starts
-   Fallout 4 via DroiDeck on the top screen. Load a save – the Pip-Boy fills with live data.
+   Fallout 4 via DroidDeck on the top screen. Load a save – the Pip-Boy fills with live data.
 
 If it works for you, a ⭐ on GitHub helps.
 
@@ -63,7 +63,7 @@ If it works for you, a ⭐ on GitHub helps.
 
 - Fallout 4 uses almost all RAM on the Thor. While a save loads, Android may close the Pip-Boy;
   the built-in guard reopens it ~20 s after the game is stable again. It never reopens it during
-  loading, because bringing an app to the front lowers DroiDeck's priority and could get the game killed.
+  loading, because bringing an app to the front lowers DroidDeck's priority and could get the game killed.
 - The plugin only listens on `127.0.0.1:8767` (configurable in `ThorPipBoy.ini`).
 - Saves are never written by the plugin.
 

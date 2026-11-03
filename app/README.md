@@ -6,7 +6,7 @@ Canvas, no game artwork), live data from the **ThorPipBoy** F4SE plugin (`ws://1
 - Tabs STAT, INV (tap = equip / unequip / use), DATA, MAP (world + local map, tap = zoom), RADIO (on/off, stations)
 - Auto-reconnect, “waiting for Fallout 4…”, English/German
 - Launcher tile “Thor Pip-Boy”: opens the Pip-Boy on display 4, then Fallout 4 (Steam AppID 377160) via
-  DroiDeck's `LAUNCH_GAME` intent on display 0 (this order keeps DroiDeck in front)
+  DroidDeck's `LAUNCH_GAME` intent on display 0 (this order keeps DroidDeck in front)
 - Guard (`Guard.java`): an exact-alarm chain without a resident process reopens the Pip-Boy after Android
   killed it, but only once the plugin reports the game stable for ≥ 20 s. Needs
   `SYSTEM_ALERT_WINDOW` and `SCHEDULE_EXACT_ALARM` granted via appops (see top-level README).
