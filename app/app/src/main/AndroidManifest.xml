@@ -1,0 +1,27 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Nur für 127.0.0.1 (ThorPipBoy-F4SE-Plugin im Spiel); keine Verbindungen nach außen. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Wächter (Alarm-Kette, Guard.java): öffnet den Pip-Boy nach einem Low-Memory-Kill unten neu -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <queries>
+        <package android:name="com.droiddeck.launcher" />
+    </queries>
+    <application android:label="@string/app_name" android:icon="@mipmap/ic_launcher"
+        android:appCategory="game" android:usesCleartextTraffic="true" android:theme="@style/Theme.PipBoy">
+        <!-- Starter: Fallout 4 in DroiDeck oben (Display 0), Pip-Boy unten (Display 4) -->
+        <activity android:name=".StarterActivity" android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true" android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".PipBoyActivity" android:exported="true"
+            android:label="@string/pipboy_name" android:launchMode="singleTask"
+            android:resizeableActivity="true" android:screenOrientation="unspecified"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|density|uiMode" />
+        <receiver android:name=".Guard" android:exported="false" />
+    </application>
+</manifest>
