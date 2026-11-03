@@ -8,16 +8,16 @@ PORT = 8767
 state = {
     "radio_on": True,
     "inv": [
-        {"id": "0x00000101", "stack": 0, "name": "Laser Musket", "type": "weapon", "count": 1, "equipped": True, "weight": 12.6, "value": 57},
-        {"id": "0x00000102", "stack": 0, "name": "10mm Pistol", "type": "weapon", "count": 1, "equipped": False, "weight": 4.2, "value": 53},
+        {"id": "0x00000101", "stack": 0, "name": "Old Laser Rifle", "type": "weapon", "count": 1, "equipped": True, "weight": 12.6, "value": 57},
+        {"id": "0x00000102", "stack": 0, "name": "Service Pistol", "type": "weapon", "count": 1, "equipped": False, "weight": 4.2, "value": 53},
         {"id": "0x00000103", "stack": 0, "name": "Baseball Bat", "type": "weapon", "count": 1, "equipped": False, "weight": 3.0, "value": 25},
-        {"id": "0x00000201", "stack": 0, "name": "Vault Suit", "type": "apparel", "count": 1, "equipped": True, "weight": 1.0, "value": 10},
-        {"id": "0x00000202", "stack": 0, "name": "Leather Chest Piece", "type": "apparel", "count": 1, "equipped": False, "weight": 5.0, "value": 25},
-        {"id": "0x00000301", "stack": 0, "name": "Stimpak", "type": "aid", "count": 7, "equipped": False, "weight": 0.1, "value": 50},
-        {"id": "0x00000302", "stack": 0, "name": "RadAway", "type": "aid", "count": 3, "equipped": False, "weight": 0.1, "value": 80},
-        {"id": "0x00000303", "stack": 0, "name": "Purified Water", "type": "aid", "count": 4, "equipped": False, "weight": 0.5, "value": 20},
-        {"id": "0x00000401", "stack": 0, "name": "Fusion Cell", "type": "ammo", "count": 112, "equipped": False, "weight": 0, "value": 2},
-        {"id": "0x00000501", "stack": 0, "name": "Wonderglue", "type": "junk", "count": 2, "equipped": False, "weight": 0.5, "value": 25},
+        {"id": "0x00000201", "stack": 0, "name": "Blue Jumpsuit", "type": "apparel", "count": 1, "equipped": True, "weight": 1.0, "value": 10},
+        {"id": "0x00000202", "stack": 0, "name": "Leather Vest", "type": "apparel", "count": 1, "equipped": False, "weight": 5.0, "value": 25},
+        {"id": "0x00000301", "stack": 0, "name": "Med Kit", "type": "aid", "count": 7, "equipped": False, "weight": 0.1, "value": 50},
+        {"id": "0x00000302", "stack": 0, "name": "Rad Flush", "type": "aid", "count": 3, "equipped": False, "weight": 0.1, "value": 80},
+        {"id": "0x00000303", "stack": 0, "name": "Clean Water", "type": "aid", "count": 4, "equipped": False, "weight": 0.5, "value": 20},
+        {"id": "0x00000401", "stack": 0, "name": "Energy Cell", "type": "ammo", "count": 112, "equipped": False, "weight": 0, "value": 2},
+        {"id": "0x00000501", "stack": 0, "name": "Super Glue", "type": "junk", "count": 2, "equipped": False, "weight": 0.5, "value": 25},
         {"id": "0x00000601", "stack": 0, "name": "Holotape: Notes", "type": "holotape", "count": 1, "equipped": False, "weight": 0, "value": 0},
     ],
 }
@@ -36,18 +36,18 @@ def collect(key):
                 for k in ["head", "torso", "leftArm", "rightArm", "leftLeg", "rightLeg"]}
     if key == "player.inventory": return state["inv"]
     if key == "player.quests":
-        return [{"quest": "Out of Time", "questId": "0x1", "objective": "Talk to the detective", "index": 10, "state": "active"},
-                {"quest": "Out of Time", "questId": "0x1", "objective": "Reach the city", "index": 5, "state": "completed"},
-                {"quest": "Jewel of the Commonwealth", "questId": "0x2", "objective": "Find the market", "index": 20, "state": "active"}]
+        return [{"quest": "Lost and Found", "questId": "0x1", "objective": "Talk to the mechanic", "index": 10, "state": "active"},
+                {"quest": "Lost and Found", "questId": "0x1", "objective": "Reach the town", "index": 5, "state": "completed"},
+                {"quest": "Market Day", "questId": "0x2", "objective": "Find the market", "index": 20, "state": "active"}]
     if key == "player.location":
         return {"x": -3000 + 2000 * math.sin(t / 20), "y": 4000, "z": 120, "heading": t % 6.28, "interior": False,
-                "cell": "Wilderness", "location": "Concord", "worldspace": "Commonwealth", "worldspaceId": "0x0000003C"}
+                "cell": "Wilderness", "location": "Old Mill", "worldspace": "Wasteland", "worldspaceId": "0x0000003C"}
     if key == "world.time": return {"year": 2287, "month": 9, "day": 23, "hour": (t / 10) % 24, "daysPassed": 12}
     if key == "radio":
         return {"enabled": state["radio_on"], "frequency": 98.0,
-                "stations": [{"text": "Diamond City Radio", "active": True, "inRange": True},
+                "stations": [{"text": "Town Radio", "active": True, "inRange": True},
                              {"text": "Classical Radio", "active": False, "inRange": True},
-                             {"text": "Distress Signal", "active": False, "inRange": True}]}
+                             {"text": "Beacon", "active": False, "inRange": True}]}
     if key == "pipboy.Map":
         locs = [{"X": -60000 + (i * 7919) % 120000, "Y": -60000 + (i * 104729) % 120000, "text": f"Ort {i}",
                  "Discovered": i % 3 != 0, "Visible": True} for i in range(60)]

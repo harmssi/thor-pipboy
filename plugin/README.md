@@ -1,78 +1,69 @@
-# ThorPipBoy (F4SE-Plugin)
+# ThorPipBoy – F4SE plugin
 
-F4SE-Plugin für Fallout 4 **1.11.240** (Steam, „Anniversary“-Runtime), das Pip-Boy-Daten
-über einen WebSocket-Server bereitstellt – Gegenstück zur Android-App `de.harmssi.thorpipboy`
-auf dem unteren Bildschirm des AYN Thor. Ersatz für die in 1.11.x nicht mehr funktionierende
-offizielle Pip-Boy-App-Schnittstelle (TCP 27000).
+F4SE plugin for Fallout 4 **1.11.240** that serves Pip-Boy data over a WebSocket server
+(`ws://127.0.0.1:8767`). Architecture and protocol follow [SkyrimWebSocket](https://github.com/andreyvelsk/SkyrimWebSocket).
 
-Architektur und Protokoll sind an [SkyrimWebSocket](https://github.com/andreyvelsk/SkyrimWebSocket) angelehnt.
+## Build (no Windows needed)
 
-## Bauen (ohne Windows)
+`./build.sh` syncs the sources to a Linux host with Docker (`THOR_BUILD_HOST=user@host`) and builds in the
+image from [`docker/Dockerfile`](docker/Dockerfile): Debian trixie, clang-cl/lld-link 21 from apt.llvm.org,
+MSVC CRT + Windows SDK via [xwin](https://github.com/Jake-Shadle/xwin) (accepts the Microsoft license on image build).
+Result: `out/ThorPipBoy.dll` (static CRT).
 
-`./build.sh` – synchronisiert die Quellen auf den Build-Host (`THOR_BUILD_HOST` aus
-`~/.config/thorconquer/env`) und baut dort im Docker-Image `fo4-xbuild`
-(`docker/Dockerfile`: Debian trixie, clang-cl/lld-link 21 von apt.llvm.org, MSVC-CRT + Windows-SDK via
-[xwin](https://github.com/Jake-Shadle/xwin)). Ergebnis: `out/ThorPipBoy.dll` (statische CRT).
+Dependencies are git submodules (`git submodule update --init --recursive`):
+[libxse/commonlibf4](https://github.com/libxse/commonlibf4) (supports 1.11.240 via Address Library IDs) and
+[spdlog](https://github.com/gabime/spdlog) v1.16.0. CommonLibF4's `F4SE/Registration*.cpp` is skipped
+(does not compile with clang-cl and is not needed).
 
-Abhängigkeiten als Git-Submodule: [libxse/commonlibf4](https://github.com/libxse/commonlibf4)
-(unterstützt 1.11.240, Address-Library-IDs), [spdlog](https://github.com/gabime/spdlog) v1.16.0.
-`F4SE/Registration*.cpp` aus CommonLibF4 wird ausgelassen (kompiliert nicht mit clang-cl, nicht benötigt).
+`tools/check_addrlib.py <version-1-11-240-0.bin>` checks that all Address Library IDs exist;
+`tools/install_thor.sh <F4SE folder> <bin>` installs everything via adb (backs up existing files).
 
-## Installation (Spielverzeichnis)
+Log: `Data/F4SE/Plugins/ThorPipBoy.log` (next to the DLL; time in the Proton prefix is UTC).
 
-- F4SE 0.7.x für 1.11.240 (`f4se_loader.exe`, `f4se_1_11_240.dll`, `Data/Scripts`)
-- Address Library: `Data/F4SE/Plugins/version-1-11-240-0.bin`
-- `Data/F4SE/Plugins/ThorPipBoy.dll` (+ optional `ThorPipBoy.ini`)
-- Log: `Documents/My Games/Fallout4/F4SE/ThorPipBoy.log`
+## Protocol
 
-## Protokoll (ws://127.0.0.1:8767)
+JSON messages with a `type` field. After connecting the server sends `hello`
+(`server`, `version`, `protocol`, `ready`, `keys`). A plain HTTP request returns
+`{"server":"ThorPipBoy","ready":…,"readyForMs":…}` (used by the app's guard).
 
-JSON-Nachrichten mit Feld `type`. Der Server schickt nach dem Verbinden `hello`
-(`server`, `version`, `protocol`, `ready`, `keys`).
-
-| Client → Server | Beschreibung |
+| Client → server | |
 |---|---|
-| `{"type":"subscribe","id":"s","settings":{"frequency":500,"sendOnChange":true},"fields":{"stats":"player.stats"}}` | Abo; `fields` als Objekt (Alias → Schlüssel) oder Array |
-| `{"type":"unsubscribe","id":"s"}` / `{"type":"unsubscribe_all"}` | Abo beenden |
-| `{"type":"query","id":"q","fields":["player.inventory"]}` | einmalige Abfrage → `data` |
+| `{"type":"subscribe","id":"s","settings":{"frequency":500,"sendOnChange":true},"fields":{"stats":"player.stats"}}` | subscription; `fields` as object (alias → key) or array |
+| `{"type":"unsubscribe","id":"s"}` / `{"type":"unsubscribe_all"}` | stop |
+| `{"type":"query","id":"q","fields":["player.inventory"]}` | one-shot → `data` |
 | `{"type":"heartbeat"}` | → `{"type":"heartbeat","ts":…,"ready":…}` |
 | `{"type":"command","id":"c","command":"toggle","params":{"id":"0x0004822B","stack":0}}` | → `commandResult` |
 
-Server → Client: `{"type":"data","id":…,"data":{alias: wert}}`, `commandResult`
+Server → client: `data` (`{"type":"data","id":…,"data":{alias: value}}`), `commandResult`
 (`success`, `result`, `error`), `error`.
 
-### Schlüssel
-
-| Schlüssel | Inhalt |
+| Key | Content |
 |---|---|
 | `game` | `ready`, `player`, `pipboyOpen` |
-| `player.stats` | name, level, xpProgress, hp/hpMax, ap/apMax, rads, caps, weight/weightMax, Resistenzen |
+| `player.stats` | name, level, xpProgress, hp/hpMax, ap/apMax, rads, caps, weight/weightMax, resistances |
 | `player.special` | S.P.E.C.I.A.L. (`value`, `base`) |
 | `player.limbs` | head, torso, leftArm, rightArm, leftLeg, rightLeg (`value`, `max`, `crippled`) |
-| `player.inventory` | `[{id, stack, name, type, count, equipped, weight, value}]`, type ∈ weapon/apparel/aid/ammo/junk/book/holotape/key/misc |
-| `player.quests` | angezeigte Questziele `[{quest, questId, objective, index, state}]` |
+| `player.inventory` | `[{id, stack, name, type, count, equipped, weight, value}]` |
+| `player.quests` | displayed quest objectives |
 | `player.location` | x, y, z, heading, interior, cell, location, worldspace |
-| `world.time` | year, month, day, hour, daysPassed |
-| `radio` | enabled, frequency, stations (Pip-Boy-Baum `Radio`) |
-| `pipboy`, `pipboy.<Pfad>` | Rohdaten aus dem internen Pip-Boy-Datenmodell (`PipboyDataManager`), z. B. `pipboy.Map.World` |
+| `world.time` | year (e.g. 287 = 2287), month (1-based), day, hour, daysPassed |
+| `radio` | enabled, frequency, stations |
+| `pipboy`, `pipboy.<path>` | raw data from the game's internal Pip-Boy data model (`PipboyDataManager`), e.g. `pipboy.Map.World`, `pipboy.Quests` |
 
-Alle Daten werden auf dem Spielthread (F4SE-Task-Queue) gesammelt; Befehle ebenso.
-
-### Befehle
-
-| Befehl | Parameter | Wirkung |
+| Command | Params | Effect |
 |---|---|---|
-| `toggle` | `id`, `stack` | ausrüsten/ablegen bzw. Hilfsmittel benutzen |
-| `equip` / `unequip` / `use` | `id`, `stack` | explizit |
-| `radio` | `enable` (optional, sonst umschalten) | Pip-Boy-Radio an/aus |
+| `toggle` | `id`, `stack` | equip/unequip, or use an aid item |
+| `equip` / `unequip` / `use` | `id`, `stack` | explicit |
+| `radio` | `enable` (optional, otherwise toggle) | Pip-Boy radio on/off |
 
-## Thor/DroiDeck (getestet 02.11.2026)
+All data is collected and all commands run on the game thread (F4SE task queue).
 
-- F4SE 0.7.9 + Address Library (All in One, `version-1-11-240-0.bin`) + Plugin per
-  `tools/install_thor.sh <F4SE-Ordner> <bin>`; vorher `tools/check_addrlib.py <bin>` (alle 26 genutzten IDs vorhanden).
-- Steam-Startoption (Eigenschaften → Allgemein → Startoptionen; vorher leer):
-  `bash -c 'a=("${@/Fallout4Launcher.exe/f4se_loader.exe}"); exec "${a[@]/Fallout4.exe/f4se_loader.exe}"' -- %command%`
-- Ergebnis: Plugin lädt (F4SE 0.7.9, Spiel 1.11.240), Server aus Android auf 127.0.0.1:8767 erreichbar,
-  Werte, Inventar, Quests, Karte (Welt + lokal) und Radio live; Ausrüsten, Benutzen und Radio an/aus funktionieren im Spiel.
-- Log: `Data/F4SE/Plugins/ThorPipBoy.log` (Uhrzeit im Proton-Prefix = UTC).
-- Bekannt: `EquipObject` meldet bei Verbrauchsgütern `false`, obwohl benutzt wird → wird als Erfolg gemeldet.
+## Tested
+
+AYN Thor, DroiDeck (Steam/Proton/FEX), Fallout 4 1.11.240, F4SE 0.7.9, Address Library (all-in-one):
+live stats, inventory, quests, map, radio; equip, use and radio toggle work in game.
+Known: `EquipObject` returns `false` for consumables although the item is used – reported as success.
+
+## License
+
+GPL-3.0-or-later with the Modding Exception and GPL-3.0 Linking Exception (see `LICENSE`, `EXCEPTIONS`).

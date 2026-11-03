@@ -4,7 +4,9 @@
 # Vorhandene Dateien werden vorher nach <Spiel>/_thorpipboy_backup/<Zeit>/ gesichert.
 set -euo pipefail
 F4SE_DIR=${1:?F4SE-Ordner}; ADDR=${2:?Address-Library-.bin}; DLL=${3:-$(dirname "$0")/../out/ThorPipBoy.dll}
-G=${FO4_DIR:-/storage/XXXX-XXXX/Android/data/com.droiddeck.launcher/files/steam/steamapps/common/Fallout 4}
+# Spielordner: FO4_DIR oder automatisch auf internem Speicher/SD-Karte suchen
+G=${FO4_DIR:-$(adb shell 'ls -d /storage/*/Android/data/com.droiddeck.launcher/files/steam/steamapps/common/"Fallout 4" /sdcard/Android/data/com.droiddeck.launcher/files/steam/steamapps/common/"Fallout 4" 2>/dev/null | head -1' | tr -d '\r')}
+[ -n "$G" ] || { echo "Fallout-4-Ordner nicht gefunden – FO4_DIR setzen"; exit 1; }
 TMP=/data/local/tmp/thorpipboy
 BK="$G/_thorpipboy_backup/$(date +%Y%m%d-%H%M)"
 adb shell "rm -rf $TMP; mkdir -p $TMP"

@@ -1,29 +1,25 @@
-# Thor Pip-Boy (Android)
+# Thor Pip-Boy – Android app
 
-Begleit-App für den unteren Bildschirm des AYN Thor: eigener Pip-Boy in grüner
-Phosphor-Optik (alles per Canvas gezeichnet, keine Spielgrafiken), Daten live aus
-Fallout 4 über das F4SE-Plugin **ThorPipBoy** (`ws://127.0.0.1:8767`, siehe `../plugin`).
+Bottom-screen companion for the AYN Thor: own green phosphor Pip-Boy look (everything drawn on a
+Canvas, no game artwork), live data from the **ThorPipBoy** F4SE plugin (`ws://127.0.0.1:8767`, see `../plugin`).
 
-- Reiter STAT (Status-Figur mit Gliedmaßen, S.P.E.C.I.A.L.), INV (Waffen, Kleidung, Hilfe,
-  Verschiedenes, Schrott, Munition – Tippen = ausrüsten/ablegen/benutzen), DATEN (Quests, Welt),
-  KARTE (Marker aus dem Pip-Boy-Datenmodell + Spielerpfeil, Tippen = Zoom), RADIO (an/aus, Sender).
-- Auto-Reconnect, „Warte auf Fallout 4…“, Englisch/Deutsch.
-- Starter-Kachel „Thor Pip-Boy“: startet Fallout 4 (AppID 377160) per DroiDeck-Intent auf
-  Display 0 und den Pip-Boy auf Display 4.
+- Tabs STAT, INV (tap = equip / unequip / use), DATA, MAP (world + local map, tap = zoom), RADIO (on/off, stations)
+- Auto-reconnect, “waiting for Fallout 4…”, English/German
+- Launcher tile “Thor Pip-Boy”: opens the Pip-Boy on display 4, then Fallout 4 (Steam AppID 377160) via
+  DroiDeck's `LAUNCH_GAME` intent on display 0 (this order keeps DroiDeck in front)
+- Guard (`Guard.java`): an exact-alarm chain without a resident process reopens the Pip-Boy after Android
+  killed it, but only once the plugin reports the game stable for ≥ 20 s. Needs
+  `SYSTEM_ALERT_WINDOW` and `SCHEDULE_EXACT_ALARM` granted via appops (see top-level README).
+  Test hook: `adb shell am start -n de.harmssi.thorpipboy/.PipBoyActivity --ez debug_kill true`.
 
-Bauen: `./build.sh [--install]` (Docker-Image `thor-build` auf `THOR_BUILD_HOST`).
-UI-Test ohne Spiel: `python3 -I tools/mock_server.py` + `adb reverse tcp:8767 tcp:8767`.
+## Build
 
-## Wächter (Guard.java)
+`./build.sh [--install]` builds in the Docker image `thor-build` (Android SDK 35 + Gradle) on
+`THOR_BUILD_HOST`. The release signing key is generated once on the build host (`keystore/`, not in this repo)
+and must be kept so updates install over older versions.
 
-Fallout 4 braucht auf dem Thor fast den ganzen RAM; beim Laden eines Spielstands beendet der
-Low-Memory-Killer oft den Pip-Boy. Der Wächter ist eine Alarm-Kette ohne eigenen Dauerprozess:
-Der laufende Pip-Boy schiebt alle 2 s einen exakten Alarm 6 s in die Zukunft. Stirbt er, prüft ein
-kurzlebiger Receiver per HTTP den Plugin-Status (`ready`, `readyForMs`) und öffnet den Pip-Boy erst,
-wenn der Spielstand seit mindestens 20 s geladen ist. Grund (am Gerät gemessen): Holt sich der
-Pip-Boy den Vordergrund, fällt DroiDeck von oom_adj 0 auf 50 und wird bei einem Lade-Peak beendet –
-samt Spiel. Selbst geschlossen = bleibt zu, bis das Spiel endet.
+UI test without the game: `python3 -I tools/mock_server.py` + `adb reverse tcp:8767 tcp:8767`.
 
-Einmalig nötig: `adb shell appops set de.harmssi.thorpipboy SYSTEM_ALERT_WINDOW allow` und
-`adb shell appops set de.harmssi.thorpipboy SCHEDULE_EXACT_ALARM allow`.
-Test-Haken: `adb shell am start -n de.harmssi.thorpipboy/.PipBoyActivity --ez debug_kill true`.
+## License
+
+MIT

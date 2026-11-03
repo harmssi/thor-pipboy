@@ -1,0 +1,6 @@
+[submodule "plugin/third_party/commonlibf4"]
+	path = plugin/third_party/commonlibf4
+	url = https://github.com/libxse/commonlibf4
+[submodule "plugin/third_party/spdlog"]
+	path = plugin/third_party/spdlog
+	url = https://github.com/gabime/spdlog
