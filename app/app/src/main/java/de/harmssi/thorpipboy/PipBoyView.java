@@ -198,7 +198,7 @@ public class PipBoyView extends View {
             }
             c.restore();
             drawFooter(c, pad, h - pad - footH, w - pad, footH);
-            if (toast != null && SystemClock.uptimeMillis() < toastUntil) drawToast(c, w, contentRect.bottom);
+            if (toast != null && SystemClock.uptimeMillis() < toastUntil) drawToast(c, w, tab == 5 ? contentRect.bottom - u * 3.4f : contentRect.bottom);   // FAV: über den Stimpak/RadAway-Knöpfen
         }
         if (overlay != null) c.drawBitmap(overlay, 0, 0, null);
         if (tab == 4 && radio != null && radio.optBoolean("enabled") && connected && ready) postInvalidateDelayed(50);
@@ -613,9 +613,22 @@ public class PipBoyView extends View {
             c.drawRect(r, line);
             txt(c, String.valueOf(i + 1), l + u * 0.4f, t + u * 1.0f, u * 0.8f, Paint.Align.LEFT, G_DIM);
             if (o == null) continue;
-            String name = fit(o.optString("name"), gw - u * 0.8f, u * 1.0f);
-            if (eq) glowText(c, name, r.centerX(), r.centerY() + u * 0.35f, u * 1.0f, Paint.Align.CENTER, G);
-            else txt(c, name, r.centerX(), r.centerY() + u * 0.35f, u * 1.0f, Paint.Align.CENTER, G);
+            // Name auf bis zu zwei Zeilen umbrechen (am letzten Leerzeichen, das noch passt)
+            String name = o.optString("name"), l2 = "";
+            float maxW = gw - u * 0.8f, ts = u * 1.0f;
+            text.setTextSize(ts);
+            if (text.measureText(name) > maxW) {
+                int cut = name.lastIndexOf(' ');
+                while (cut > 0 && text.measureText(name.substring(0, cut)) > maxW) cut = name.lastIndexOf(' ', cut - 1);
+                if (cut > 0) { l2 = fit(name.substring(cut + 1), maxW, ts); name = name.substring(0, cut); }
+                else name = fit(name, maxW, ts);
+            }
+            float ny = r.centerY() + u * (l2.isEmpty() ? 0.35f : -0.25f);
+            for (String ln : l2.isEmpty() ? new String[]{name} : new String[]{name, l2}) {
+                if (eq) glowText(c, ln, r.centerX(), ny, ts, Paint.Align.CENTER, G);
+                else txt(c, ln, r.centerX(), ny, ts, Paint.Align.CENTER, G);
+                ny += u * 1.2f;
+            }
             String type = o.optString("type");
             if (type.equals("aid") || o.optInt("count", 1) > 1)
                 txt(c, "×" + o.optInt("count", 1), r.right - u * 0.4f, r.bottom - u * 0.4f, u * 0.85f, Paint.Align.RIGHT, G_DIM);
