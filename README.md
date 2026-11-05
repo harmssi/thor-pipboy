@@ -12,6 +12,8 @@ Fallout 4 release (1.11.240).
 > and no Bethesda artwork – all graphics are drawn by the app itself.
 
 <!-- Video: add links here, e.g. [▶ Demo on YouTube](https://youtu.be/XXXX) -->
+
+**All Thor ports: [toravo.de/en/thor](https://toravo.de/en/thor/)**
 **Videos:** _coming soon_
 
 ## What it shows
