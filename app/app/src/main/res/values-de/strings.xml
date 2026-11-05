@@ -61,4 +61,10 @@
     <string name="er">EW</string>
     <string name="rr">STRW</string>
     <string name="paused">PAUSE</string>
+    <string name="tab_fav">FAV</string>
+    <string name="sub_quickkeys">SCHNELLTASTEN 1–12</string>
+    <string name="stimpak">Stimpak</string>
+    <string name="radaway">RadAway</string>
+    <string name="none_left">Kein %s mehr</string>
+    <string name="no_favorites">Noch keine Favoriten – im Spiel-Pip-Boy Gegenstände als Favorit markieren.</string>
 </resources>

@@ -328,6 +328,11 @@ namespace Game
 					w.KV("type", Category(type));
 					w.KI("count", st->GetCount());
 					w.KB("equipped", st->IsEquipped());
+					// Favoriten-Slot 0..11 (Schnelltaste 1..12), nur wenn belegt
+					if (auto* ex = st->extra.get()) {
+						if (auto* fav = ex->GetByType<RE::ExtraFavorite>(); fav && fav->quickkeyIndex >= 0)
+							w.KI("fav", fav->quickkeyIndex);
+					}
 					w.KD("weight", RE::TESWeightForm::GetFormWeight(obj, inst));
 					w.KI("value", RE::TESValueForm::GetFormValue(obj, inst));
 					w.EndObject();

@@ -43,7 +43,7 @@ Server → client: `data` (`{"type":"data","id":…,"data":{alias: value}}`), `c
 | `player.stats` | name, level, xpProgress, hp/hpMax, ap/apMax, rads, caps, weight/weightMax, resistances |
 | `player.special` | S.P.E.C.I.A.L. (`value`, `base`) |
 | `player.limbs` | head, torso, leftArm, rightArm, leftLeg, rightLeg (`value`, `max`, `crippled`) |
-| `player.inventory` | `[{id, stack, name, type, count, equipped, weight, value}]` |
+| `player.inventory` | `[{id, stack, name, type, count, equipped, weight, value, fav?}]` (`fav` = quick-key slot 0–11, only if favorited) |
 | `player.quests` | displayed quest objectives |
 | `player.location` | x, y, z, heading, interior, cell, location, worldspace |
 | `world.time` | year (e.g. 287 = 2287), month (1-based), day, hour, daysPassed |

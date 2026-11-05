@@ -8,14 +8,14 @@ PORT = 8767
 state = {
     "radio_on": True,
     "inv": [
-        {"id": "0x00000101", "stack": 0, "name": "Old Laser Rifle", "type": "weapon", "count": 1, "equipped": True, "weight": 12.6, "value": 57},
-        {"id": "0x00000102", "stack": 0, "name": "Service Pistol", "type": "weapon", "count": 1, "equipped": False, "weight": 4.2, "value": 53},
-        {"id": "0x00000103", "stack": 0, "name": "Baseball Bat", "type": "weapon", "count": 1, "equipped": False, "weight": 3.0, "value": 25},
+        {"id": "0x00000101", "stack": 0, "name": "Old Laser Rifle", "type": "weapon", "count": 1, "equipped": True, "fav": 0, "weight": 12.6, "value": 57},
+        {"id": "0x00000102", "stack": 0, "name": "Service Pistol", "type": "weapon", "count": 1, "equipped": False, "fav": 1, "weight": 4.2, "value": 53},
+        {"id": "0x00000103", "stack": 0, "name": "Baseball Bat", "type": "weapon", "count": 1, "equipped": False, "fav": 2, "weight": 3.0, "value": 25},
         {"id": "0x00000201", "stack": 0, "name": "Blue Jumpsuit", "type": "apparel", "count": 1, "equipped": True, "weight": 1.0, "value": 10},
-        {"id": "0x00000202", "stack": 0, "name": "Leather Vest", "type": "apparel", "count": 1, "equipped": False, "weight": 5.0, "value": 25},
-        {"id": "0x00000301", "stack": 0, "name": "Med Kit", "type": "aid", "count": 7, "equipped": False, "weight": 0.1, "value": 50},
-        {"id": "0x00000302", "stack": 0, "name": "Rad Flush", "type": "aid", "count": 3, "equipped": False, "weight": 0.1, "value": 80},
-        {"id": "0x00000303", "stack": 0, "name": "Clean Water", "type": "aid", "count": 4, "equipped": False, "weight": 0.5, "value": 20},
+        {"id": "0x00000202", "stack": 0, "name": "Leather Vest", "type": "apparel", "count": 1, "equipped": False, "fav": 4, "weight": 5.0, "value": 25},
+        {"id": "0x00023736", "stack": 0, "name": "Med Kit", "type": "aid", "count": 7, "equipped": False, "fav": 8, "weight": 0.1, "value": 50},
+        {"id": "0x00023742", "stack": 0, "name": "Rad Flush", "type": "aid", "count": 3, "equipped": False, "weight": 0.1, "value": 80},
+        {"id": "0x00000303", "stack": 0, "name": "Clean Water", "type": "aid", "count": 4, "equipped": False, "fav": 9, "weight": 0.5, "value": 20},
         {"id": "0x00000401", "stack": 0, "name": "Energy Cell", "type": "ammo", "count": 112, "equipped": False, "weight": 0, "value": 2},
         {"id": "0x00000501", "stack": 0, "name": "Super Glue", "type": "junk", "count": 2, "equipped": False, "weight": 0.5, "value": 25},
         {"id": "0x00000601", "stack": 0, "name": "Holotape: Notes", "type": "holotape", "count": 1, "equipped": False, "weight": 0, "value": 0},
@@ -113,7 +113,7 @@ async def handle(reader, writer):
                                 if not it["equipped"] and it["type"] == "weapon":
                                     for o in state["inv"]:
                                         if o["type"] == "weapon": o["equipped"] = False
-                                it["equipped"] = not it["equipped"]; res = {"action": "equipped" if it["equipped"] else "unequipped"}
+                                it["equipped"] = m["command"] == "equip" or not it["equipped"]; res = {"action": "equipped" if it["equipped"] else "unequipped"}
                     state["inv"] = [i for i in state["inv"] if i["count"] > 0]
                 writer.write(frame(json.dumps({"type": "commandResult", "id": m.get("id"), "command": m["command"],
                                                "success": res is not None, "result": res, **({} if res else {"error": "item_not_found"})})))

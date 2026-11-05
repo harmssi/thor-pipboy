@@ -23,6 +23,7 @@ Fallout 4 release (1.11.240).
 | DATA | Quests with objectives (active quest first); world info: date, location, caps, weight |
 | MAP | World map markers + quest markers + player arrow; local map indoors (doors, quest marker) |
 | RADIO | Stations in range, radio on/off |
+| FAV | Quick keys 1–12 (your in-game favorites) as big tiles – **tap = equip / use**; Stimpak and RadAway buttons with count |
 
 English and German UI, auto-reconnect, “waiting for Fallout 4…” screen.
 

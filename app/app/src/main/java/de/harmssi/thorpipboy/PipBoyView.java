@@ -29,7 +29,7 @@ import java.util.Map;
 
 /**
  * Eigene Pip-Boy-Optik: grüner Phosphor-Monochrom-Bildschirm mit Scanlines, alles per Canvas gezeichnet
- * (keine Spielgrafiken). Reiter STAT/INV/DATEN/KARTE/RADIO, Tippen auf Gegenstände = ausrüsten/benutzen.
+ * (keine Spielgrafiken). Reiter STAT/INV/DATEN/KARTE/RADIO/FAV, Tippen auf Gegenstände = ausrüsten/benutzen.
  */
 public class PipBoyView extends View {
     // ---- Farben ----
@@ -56,8 +56,8 @@ public class PipBoyView extends View {
     private long toastUntil;
 
     // ---- UI ----
-    private int tab;                              // 0..4
-    private final int[] sub = new int[5];
+    private int tab;                              // 0..5
+    private final int[] sub = new int[6];
     private final Map<String, Float> scroll = new HashMap<>();
     private String scrollKey = "";
     private float contentMaxScroll;
@@ -194,6 +194,7 @@ public class PipBoyView extends View {
                 case 2: drawData(c, contentRect); break;
                 case 3: drawMap(c, contentRect); break;
                 case 4: drawRadio(c, contentRect); break;
+                case 5: drawFav(c, contentRect); break;
             }
             c.restore();
             drawFooter(c, pad, h - pad - footH, w - pad, footH);
@@ -251,7 +252,7 @@ public class PipBoyView extends View {
     }
 
     private int[] tabNames() {
-        return new int[]{R.string.tab_stat, R.string.tab_inv, R.string.tab_data, R.string.tab_map, R.string.tab_radio};
+        return new int[]{R.string.tab_stat, R.string.tab_inv, R.string.tab_data, R.string.tab_map, R.string.tab_radio, R.string.tab_fav};
     }
 
     private void drawTabs(Canvas c, float l, float t, float r, float h) {
@@ -293,7 +294,8 @@ public class PipBoyView extends View {
             case 1: return new int[]{R.string.sub_weapons, R.string.sub_apparel, R.string.sub_aid, R.string.sub_misc, R.string.sub_junk, R.string.sub_ammo};
             case 2: return new int[]{R.string.sub_quests, R.string.sub_world};
             case 3: return new int[]{location != null && location.optBoolean("interior") ? R.string.sub_localmap : R.string.sub_worldmap};
-            default: return new int[]{R.string.sub_stations};
+            case 4: return new int[]{R.string.sub_stations};
+            default: return new int[]{R.string.sub_quickkeys};
         }
     }
 
@@ -566,13 +568,82 @@ public class PipBoyView extends View {
     private void onItemTap(JSONObject item, boolean actionable) {
         String name = item.optString("name");
         if (!actionable) { showToast(getContext().getString(R.string.no_action, name)); invalidate(); return; }
+        sendItem(item, "toggle");
+    }
+
+    private void sendItem(JSONObject item, String cmd) {
+        String name = item.optString("name");
         try {
             JSONObject p = new JSONObject();
             p.put("id", item.optString("id"));
             p.put("stack", item.optInt("stack"));
-            String id = client.command("toggle", p);
+            String id = client.command(cmd, p);
             pending.put(id, name);
         } catch (Exception ignored) { }
+    }
+
+    // ---------------------------------------------------------------- FAV
+    // Basis-FormIDs aus Fallout4.esm (wie das Plugin sie meldet)
+    static final String STIMPAK_ID = "0x00023736", RADAWAY_ID = "0x00023742";
+
+    /** Schnelltasten 1–12 (Favoriten des Spiels) als Kacheln, darunter Stimpak/RadAway mit Anzahl. */
+    private void drawFav(Canvas c, RectF a) {
+        JSONObject[] slots = new JSONObject[12];
+        JSONObject stim = null, rad = null;
+        int stimN = 0, radN = 0, favN = 0;
+        if (inventory != null) for (int i = 0; i < inventory.length(); i++) {
+            JSONObject o = inventory.optJSONObject(i);
+            if (o == null) continue;
+            int f = o.optInt("fav", -1);
+            if (f >= 0 && f < 12) { slots[f] = o; favN++; }
+            String id = o.optString("id");
+            if (id.equals(STIMPAK_ID)) { if (stim == null) stim = o; stimN += o.optInt("count"); }
+            if (id.equals(RADAWAY_ID)) { if (rad == null) rad = o; radN += o.optInt("count"); }
+        }
+        float gap = u * 0.4f, quickH = u * 3.4f;
+        float gw = (a.width() - gap * 3) / 4f, gh = (a.height() - quickH - gap * 3) / 3f;
+        for (int i = 0; i < 12; i++) {
+            float l = a.left + (i % 4) * (gw + gap), t = a.top + (i / 4) * (gh + gap);
+            RectF r = new RectF(l, t, l + gw, t + gh);
+            JSONObject o = slots[i];
+            boolean eq = o != null && o.optBoolean("equipped");
+            if (eq) { fill.setColor(BG_HI); c.drawRect(r, fill); }
+            line.setColor(o != null ? G : G_FAINT);
+            line.setStrokeWidth(u * (eq ? 0.14f : 0.08f));
+            c.drawRect(r, line);
+            txt(c, String.valueOf(i + 1), l + u * 0.4f, t + u * 1.0f, u * 0.8f, Paint.Align.LEFT, G_DIM);
+            if (o == null) continue;
+            String name = fit(o.optString("name"), gw - u * 0.8f, u * 1.0f);
+            if (eq) glowText(c, name, r.centerX(), r.centerY() + u * 0.35f, u * 1.0f, Paint.Align.CENTER, G);
+            else txt(c, name, r.centerX(), r.centerY() + u * 0.35f, u * 1.0f, Paint.Align.CENTER, G);
+            String type = o.optString("type");
+            if (type.equals("aid") || o.optInt("count", 1) > 1)
+                txt(c, "×" + o.optInt("count", 1), r.right - u * 0.4f, r.bottom - u * 0.4f, u * 0.85f, Paint.Align.RIGHT, G_DIM);
+            final JSONObject item = o;
+            final String cmd = type.equals("weapon") ? "equip" : type.equals("aid") ? "use" : "toggle";
+            hits.add(new Hit(r, () -> sendItem(item, cmd)));
+        }
+        float bt = a.bottom - quickH + gap, bw = (a.width() - gap) / 2f;
+        quickButton(c, new RectF(a.left, bt, a.left + bw, a.bottom), stim, stimN, R.string.stimpak);
+        quickButton(c, new RectF(a.right - bw, bt, a.right, a.bottom), rad, radN, R.string.radaway);
+        if (favN == 0)
+            txt(c, fit(getContext().getString(R.string.no_favorites), a.width() - u, u * 0.9f), a.centerX(), a.top + (a.height() - quickH) / 2 + u * 0.35f, u * 0.9f, Paint.Align.CENTER, G_DIM);
+    }
+
+    private void quickButton(Canvas c, RectF r, JSONObject item, int count, int label) {
+        boolean has = item != null && count > 0;
+        if (has) { fill.setColor(BG_HI); c.drawRect(r, fill); }
+        line.setColor(has ? G : G_DIM);
+        line.setStrokeWidth(u * 0.14f);
+        c.drawRect(r, line);
+        String s = (item != null ? item.optString("name") : getContext().getString(label)).toUpperCase(Locale.ROOT) + "  " + count;
+        s = fit(s, r.width() - u, u * 1.3f);
+        if (has) glowText(c, s, r.centerX(), r.centerY() + u * 0.45f, u * 1.3f, Paint.Align.CENTER, G);
+        else txt(c, s, r.centerX(), r.centerY() + u * 0.45f, u * 1.3f, Paint.Align.CENTER, G_DIM);
+        hits.add(new Hit(r, () -> {
+            if (has) sendItem(item, "use");
+            else { showToast(getContext().getString(R.string.none_left, getContext().getString(label))); invalidate(); }
+        }));
     }
 
     // ---------------------------------------------------------------- DATA

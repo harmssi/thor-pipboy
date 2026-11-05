@@ -61,4 +61,10 @@
     <string name="er">ER</string>
     <string name="rr">RES</string>
     <string name="paused">PAUSED</string>
+    <string name="tab_fav">FAV</string>
+    <string name="sub_quickkeys">QUICK KEYS 1–12</string>
+    <string name="stimpak">Stimpak</string>
+    <string name="radaway">RadAway</string>
+    <string name="none_left">No %s left</string>
+    <string name="no_favorites">No favorites yet – mark items in the in-game Pip-Boy (Favorite).</string>
 </resources>
