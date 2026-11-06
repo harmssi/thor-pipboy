@@ -60,7 +60,7 @@ You need: Fallout 4 on Steam (runtime **1.11.240**), running on the AYN Thor thr
 6. **Start “Thor Pip-Boy”** from the launcher: it opens the Pip-Boy on the bottom screen and starts
    Fallout 4 via DroidDeck on the top screen. Load a save – the Pip-Boy fills with live data.
 
-If it works for you, a ⭐ on GitHub helps.
+If it works for you, a ⭐ on GitHub helps – and [subscribing on YouTube](https://www.youtube.com/@toravomusic?sub_confirmation=1) helps me bring more ports to the Thor.
 
 ### Notes
 
