@@ -13,6 +13,12 @@ Fallout 4 release (1.11.240).
 
 <!-- Video: add links here, e.g. [▶ Demo on YouTube](https://youtu.be/XXXX) -->
 
+| Inventory (top + bottom screen) | Favourites 1–12, Stimpak, RadAway | Local map |
+|---|---|---|
+| ![Fallout 4 on the top screen, the Pip-Boy's INV tab with weapons, weight and value on the bottom screen](docs/screenshots/inv.jpg) | ![FAV tab: quick keys 1–12 as tiles with the 10 mm pistol on slot 4, Stimpak and RadAway buttons](docs/screenshots/fav.jpg) | ![MAP tab: local map of the Museum of Freedom with the player marker](docs/screenshots/map.jpg) |
+
+<sub>Real screenshots from an AYN Thor, Fallout 4 via DroidDeck on top, Thor Pip-Boy 0.2.0 below (Pip-Boy language follows the game language, German here).</sub>
+
 **All Thor ports: [toravo.de/en/thor](https://toravo.de/en/thor/)**
 **Videos:** _coming soon_
 
